@@ -1,0 +1,95 @@
+#!/bin/bash
+
+for i in {1..10}  
+do
+
+  for nodes in 2
+  do
+
+    for procs in 2
+    do
+
+      echo "$i - no smi turned on, $nodes nodes, $procs proceses" >> nosmi.txt 
+
+      for node in $(cat "$1")
+      do
+        ssh ${node} "echo 5 > /proc/smidriver"
+        ssh ${node} "echo 6 > /proc/smidriver"
+        ssh ${node} "echo 7 > /proc/smidriver"
+        echo "${node} SMI count before" >> nosmi.txt
+        ssh ${node} "dmesg |grep SMI | tail -1" >> nosmi.txt 
+        ssh ${node} "dmesg |grep TSC | tail -1" >> nosmi.txt 
+      done
+
+      mpirun -oversubscribe -host wyeast09,wyeast10 --mca plm_rsh_no_tree_spawn 1 -n $procs mpitest >> nosmi.txt
+
+      for node in $(cat "$1")
+      do
+        ssh ${node} "echo 6 > /proc/smidriver"
+        ssh ${node} "echo 7 > /proc/smidriver"
+        echo "${node} SMI count after" >> nosmi.txt
+        ssh ${node} "dmesg | grep SMI | tail -1" >> nosmi.txt 
+        ssh ${node} "dmesg | grep TSC | tail -1" >> nosmi.txt 
+      done
+
+      echo >> nosmi.txt
+
+      echo "short smi turned on, $nodes nodes, $procs processes" >> shortsmi.txt
+ 
+
+      for node in $(cat "$1")
+      do
+        ssh ${node} "echo 3 > /proc/smidriver"
+        ssh ${node} "echo 6 > /proc/smidriver"
+        ssh ${node} "echo 7 > /proc/smidriver"
+        echo "${node} SMI count before" >> shortsmi.txt
+        ssh ${node} "dmesg |grep SMI | tail -1" >> shortsmi.txt 
+        ssh ${node} "dmesg |grep TSC | tail -1" >> shortsmi.txt 
+      done
+
+      mpirun -oversubscribe -host wyeast09,wyeast10 --mca plm_rsh_no_tree_spawn 1 -n $procs mpitest >> shortsmi.txt
+
+      for node in $(cat "$1")
+      do
+        ssh ${node} "echo 6 > /proc/smidriver"
+        ssh ${node} "echo 7 > /proc/smidriver"
+        echo "${node} SMI count after" >> shortsmi.txt
+        ssh ${node} "dmesg | grep SMI | tail -1" >> shortsmi.txt 
+        ssh ${node} "dmesg | grep TSC | tail -1" >> shortsmi.txt 
+      done
+
+      echo >> shortsmi.txt
+
+      echo "long smi turned on, $nodes nodes, $procs processes" >> longsmi.txt
+
+      for node in $(cat "$1")
+      do
+        ssh ${node} "echo 4 > /proc/smidriver"
+        ssh ${node} "echo 6 > /proc/smidriver"
+        ssh ${node} "echo 7 > /proc/smidriver"
+        echo "${node} SMI count before" >> longsmi.txt 
+        ssh ${node} "dmesg |grep SMI | tail -1" >> longsmi.txt 
+        ssh ${node} "dmesg |grep TSC | tail -1" >> longsmi.txt 
+      done
+
+      mpirun -oversubscribe -host wyeast09,wyeast10 --mca plm_rsh_no_tree_spawn 1 -n $procs mpitest >> longsmi.txt
+
+      for node in $(cat "$1")
+      do
+        ssh ${node} "echo 6 > /proc/smidriver"
+        ssh ${node} "echo 7 > /proc/smidriver"
+        echo "${node} SMI count after" >> longsmi.txt
+        ssh ${node} "dmesg | grep SMI | tail -1" >> longsmi.txt 
+        ssh ${node} "dmesg | grep TSC | tail -1" >> longsmi.txt 
+      done
+
+      echo >> longsmi.txt
+
+      for node in $(cat "$1")
+      do
+        ssh ${node} "echo 5 > /proc/smidriver"
+      done
+
+    done
+  done
+done
